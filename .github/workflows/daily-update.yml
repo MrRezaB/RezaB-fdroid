@@ -1,0 +1,50 @@
+name: Daily F-Droid Update
+
+on:
+  schedule:
+    - cron: '0 4 * * *'   # هر روز ساعت ۷:۳۰ صبح ایران
+    - cron: '0 16 * * *'  # هر روز ساعت ۱۹:۳۰ شب ایران
+  workflow_dispatch:       # می‌تونی دستی هم اجرا کنی
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install fdroidserver
+        run: sudo apt update && sudo apt install fdroidserver -y
+
+      - name: Create folders
+        run: mkdir -p fdroid/repo metadata
+
+      - name: Import popular apps
+        run: |
+          fdroid import --url https://github.com/2dust/v2rayNG
+          fdroid import --url https://github.com/MetaCubeX/ClashMetaForAndroid
+          fdroid import --url https://github.com/Kr328/ClashForAndroid
+          fdroid import --url https://github.com/Hiddify/Hiddify-Next
+          fdroid import --url https://github.com/MahsaNet/MahsaNG
+          fdroid import --url https://github.com/SagerNet/sing-box-for-android
+          fdroid import --url https://github.com/Chocolate4U/Iran-clash
+          fdroid import --url https://github.com/TeamNewPipe/NewPipe
+          fdroid import --url https://github.com/NeoApplications/Neo-Store
+          fdroid import --url https://github.com/easytarget/Nekogram
+
+      - name: Update repository
+        run: |
+          fdroid update --create-metadata
+          fdroid update
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name "Daily Bot"
+          git config user.email "bot@github.com"
+          git add .
+          if ! git diff --quiet || ! git diff --staged --quiet; then
+            git commit -m "Daily auto-update $(date +'%Y-%m-%d')"
+            git push
+          else
+            echo "No new updates"
+          fi
