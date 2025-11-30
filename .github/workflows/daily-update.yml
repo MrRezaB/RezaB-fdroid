@@ -16,33 +16,45 @@ jobs:
       - name: Install fdroidserver
         run: sudo apt update && sudo apt install fdroidserver -y
 
-      - name: Create folders
-        run: mkdir -p fdroid/repo metadata
-
-      - name: Import apps
+      - name: Init F-Droid repo
         run: |
-          fdroid import --url https://github.com/2dust/v2rayNG
-          fdroid import --url https://github.com/MetaCubeX/ClashMetaForAndroid
-          fdroid import --url https://github.com/Kr328/ClashForAndroid
-          fdroid import --url https://github.com/Hiddify/Hiddify-Next
-          fdroid import --url https://github.com/MahsaNet/MahsaNG
-          fdroid import --url https://github.com/SagerNet/sing-box-for-android
-          fdroid import --url https://github.com/Chocolate4U/Iran-clash
-          fdroid import --url https://github.com/TeamNewPipe/NewPipe
-          fdroid import --url https://github.com/NeoApplications/Neo-Store
-          fdroid import --url https://github.com/easytarget/Nekogram
+          mkdir -p fdroid/repo metadata
+          cd fdroid
+          # Init empty repo to avoid warnings
+          touch metadata/fdroid-repo.yml
+          echo "AutoName: Empty Repo" > metadata/fdroid-repo.yml
 
-      - name: Update repository
-        continue-on-error: true  # ← این مهمه: حتی اگه ارور داد، ادامه بده
+      - name: Import apps (with error handling)
         run: |
           cd fdroid
-          fdroid update --create-metadata --verbose || true
-          fdroid update --verbose || true
-          # Check if index was created
+          # Import each app separately to catch errors
+          fdroid import --url https://github.com/2dust/v2rayNG || echo "v2rayNG skipped"
+          fdroid import --url https://github.com/MetaCubeX/ClashMetaForAndroid || echo "ClashMeta skipped"
+          fdroid import --url https://github.com/Kr328/ClashForAndroid || echo "Clash skipped"
+          fdroid import --url https://github.com/Hiddify/Hiddify-Next || echo "Hiddify skipped"
+          fdroid import --url https://github.com/MahsaNet/MahsaNG || echo "MahsaNG skipped"
+          fdroid import --url https://github.com/SagerNet/sing-box-for-android || echo "Sing-Box skipped"
+          fdroid import --url https://github.com/Chocolate4U/Iran-clash || echo "Iran-Clash skipped"
+          fdroid import --url https://github.com/TeamNewPipe/NewPipe || echo "NewPipe skipped"
+          fdroid import --url https://github.com/NeoApplications/Neo-Store || echo "Neo-Store skipped"
+          fdroid import --url https://github.com/easytarget/Nekogram || echo "Nekogram skipped"
+
+      - name: Update index (create-metadata and full update)
+        continue-on-error: true
+        run: |
+          cd fdroid
+          fdroid update --create-metadata --create-index || echo "Update warnings ignored"
+          # Force create index if needed
+          if [ ! -f "repo/index-v1.json" ]; then
+            echo "No index found, forcing creation"
+            fdroid update --create-index
+          fi
+          # Verify
+          ls -la repo/ | head -5
           if [ -f "repo/index-v1.json" ]; then
-            echo "Success: index-v1.json created!"
+            echo "SUCCESS: Index created! Repo ready."
           else
-            echo "Warning: index-v1.json not created - check logs"
+            echo "FAIL: No index - check imports"
           fi
 
       - name: Commit and push
@@ -50,9 +62,9 @@ jobs:
           git config user.name "Daily Bot"
           git config user.email "bot@github.com"
           git add .
-          if git diff --staged; then
-            git commit -m "Daily auto-update $(date +'%Y-%m-%d')"
-            git push
-          else
+          if git diff --staged --quiet; then
             echo "No changes to commit"
+          else
+            git commit -m "Daily update $(date +'%Y-%m-%d')"
+            git push
           fi
