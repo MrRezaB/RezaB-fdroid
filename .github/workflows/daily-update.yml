@@ -2,9 +2,9 @@ name: Daily F-Droid Update
 
 on:
   schedule:
-    - cron: '0 4 * * *'  
-    - cron: '0 16 * * *'  
-  workflow_dispatch:       
+    - cron: '0 4 * * *'    # Daily at 07:30 Iran time
+    - cron: '0 16 * * *'   # Daily at 19:30 Iran time
+  workflow_dispatch:
 
 jobs:
   update:
@@ -19,7 +19,7 @@ jobs:
       - name: Create folders
         run: mkdir -p fdroid/repo metadata
 
-      - name: Import popular apps
+      - name: Import apps
         run: |
           fdroid import --url https://github.com/2dust/v2rayNG
           fdroid import --url https://github.com/MetaCubeX/ClashMetaForAndroid
@@ -37,7 +37,7 @@ jobs:
           fdroid update --create-metadata
           fdroid update
 
-      - name: Commit & push if changed
+      - name: Commit and push
         run: |
           git config user.name "Daily Bot"
           git config user.email "bot@github.com"
