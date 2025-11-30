@@ -2,9 +2,9 @@ name: Daily F-Droid Update
 
 on:
   schedule:
-    - cron: '0 4 * * *'   # هر روز ساعت ۷:۳۰ صبح ایران
-    - cron: '0 16 * * *'  # هر روز ساعت ۱۹:۳۰ شب ایران
-  workflow_dispatch:       # می‌تونی دستی هم اجرا کنی
+    - cron: '0 4 * * *'  
+    - cron: '0 16 * * *'  
+  workflow_dispatch:       
 
 jobs:
   update:
