@@ -33,18 +33,26 @@ jobs:
           fdroid import --url https://github.com/easytarget/Nekogram
 
       - name: Update repository
+        continue-on-error: true  # ← این مهمه: حتی اگه ارور داد، ادامه بده
         run: |
-          fdroid update --create-metadata || true    # ← این || true اضافه شد
-          fdroid update || true                      # ← اینم اضافه شد (مهم!)
+          cd fdroid
+          fdroid update --create-metadata --verbose || true
+          fdroid update --verbose || true
+          # Check if index was created
+          if [ -f "repo/index-v1.json" ]; then
+            echo "Success: index-v1.json created!"
+          else
+            echo "Warning: index-v1.json not created - check logs"
+          fi
 
       - name: Commit and push
         run: |
           git config user.name "Daily Bot"
           git config user.email "bot@github.com"
           git add .
-          if ! git diff --quiet || ! git diff --staged --quiet; then
+          if git diff --staged; then
             git commit -m "Daily auto-update $(date +'%Y-%m-%d')"
             git push
           else
-            echo "No new updates"
+            echo "No changes to commit"
           fi
